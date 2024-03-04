@@ -1,0 +1,241 @@
+alias: Actions when EVSE Connected
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.charger_is_connected
+    to: "True"
+    from: "False"
+condition: []
+action:
+  - service: input_number.set_value
+    metadata: {}
+    data_template:
+      value: "{{states('sensor.polestar_9200_battery_charge_level_2')|round(0)}}"
+    target:
+      entity_id: input_number.evse_starting_battery_level
+  - choose:
+      - conditions:
+          - condition: time
+            after: "14:00:00"
+        sequence:
+          - service: notify.jorge_s_phone
+            metadata: {}
+            data:
+              message: Choose overnight charging option
+              title: Nighttime 🚗🔋
+              data:
+                actions:
+                  - action: charge_overnight
+                    title: 80%
+                  - action: charge_for_roadtrip
+                    title: 100%
+                  - action: charge_excess_solar
+                    title: Excess ☀️ Tomorrow
+          - wait_for_trigger:
+              - platform: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: charge_overnight
+              - platform: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: charge_for_roadtrip
+              - platform: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: charge_excess_solar
+            timeout:
+              hours: 0
+              minutes: 5
+              seconds: 0
+              milliseconds: 0
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ wait.trigger.event.data.action == \"charge_overnight\" }}"
+                sequence:
+                  - service: input_number.set_value
+                    metadata: {}
+                    data:
+                      value: 80
+                    target:
+                      entity_id: input_number.evse_max_charge
+                  - service: input_boolean.turn_on
+                    metadata: {}
+                    data: {}
+                    target:
+                      entity_id: input_boolean.charge_overnight
+                  - service: input_select.select_option
+                    target:
+                      entity_id: input_select.evse_charging_options
+                    data:
+                      option: Overnight to 80%
+              - conditions:
+                  - condition: template
+                    value_template: >-
+                      {{ wait.trigger.event.data.action == "charge_for_roadtrip"
+                      }}
+                sequence:
+                  - service: input_number.set_value
+                    metadata: {}
+                    data:
+                      value: 100
+                    target:
+                      entity_id: input_number.evse_max_charge
+                  - service: input_boolean.turn_on
+                    metadata: {}
+                    data: {}
+                    target:
+                      entity_id: input_boolean.charge_overnight
+                  - service: input_select.select_option
+                    target:
+                      entity_id: input_select.evse_charging_options
+                    data:
+                      option: Roadtrip, Overnight to 100%
+              - conditions:
+                  - condition: template
+                    value_template: >-
+                      {{ wait.trigger.event.data.action == "charge_excess_solar"
+                      }}
+                sequence:
+                  - service: input_number.set_value
+                    metadata: {}
+                    data:
+                      value: 90
+                    target:
+                      entity_id: input_number.evse_max_charge
+                  - service: input_boolean.turn_off
+                    target:
+                      entity_id:
+                        - input_boolean.charge_overnight
+                    data: {}
+                  - service: input_boolean.turn_on
+                    metadata: {}
+                    data: {}
+                    target:
+                      entity_id: input_boolean.charge_with_excess_solar
+                  - service: input_select.select_option
+                    target:
+                      entity_id: input_select.evse_charging_options
+                    data:
+                      option: Excess Solar, no Overnight
+            default:
+              - service: input_number.set_value
+                metadata: {}
+                data:
+                  value: 80
+                target:
+                  entity_id: input_number.evse_max_charge
+              - service: input_boolean.turn_on
+                metadata: {}
+                data: {}
+                target:
+                  entity_id: input_boolean.charge_overnight
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.evse_charging_options
+                data:
+                  option: Overnight to 80%
+      - conditions:
+          - condition: time
+            before: "14:00:00"
+        sequence:
+          - service: notify.jorge_s_phone
+            metadata: {}
+            data:
+              title: Daytime 🚗🔋
+              data:
+                actions:
+                  - action: charge_excess_solar
+                    title: Excess ☀️
+                  - action: charge_for_roadtrip
+                    title: Max Charge 100%
+              message: Choose charging option
+          - wait_for_trigger:
+              - platform: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: charge_for_roadtrip
+              - platform: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: charge_excess_solar
+            timeout:
+              hours: 0
+              minutes: 5
+              seconds: 0
+              milliseconds: 0
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: >-
+                      {{ wait.trigger.event.data.action == "charge_for_roadtrip"
+                      }}
+                sequence:
+                  - service: input_number.set_value
+                    metadata: {}
+                    data:
+                      value: 100
+                    target:
+                      entity_id: input_number.evse_max_charge
+                  - service: input_boolean.turn_on
+                    metadata: {}
+                    data: {}
+                    target:
+                      entity_id: input_boolean.charge_overnight
+                  - service: input_select.select_option
+                    target:
+                      entity_id: input_select.evse_charging_options
+                    data:
+                      option: Roadtrip, Overnight to 100%
+              - conditions:
+                  - condition: template
+                    value_template: >-
+                      {{ wait.trigger.event.data.action == "charge_excess_solar"
+                      }}
+                sequence:
+                  - service: input_number.set_value
+                    metadata: {}
+                    data:
+                      value: 90
+                    target:
+                      entity_id: input_number.evse_max_charge
+                  - service: input_boolean.turn_off
+                    target:
+                      entity_id:
+                        - input_boolean.charge_overnight
+                    data: {}
+                  - service: input_boolean.turn_on
+                    metadata: {}
+                    data: {}
+                    target:
+                      entity_id: input_boolean.charge_with_excess_solar
+                  - service: input_select.select_option
+                    target:
+                      entity_id: input_select.evse_charging_options
+                    data:
+                      option: Excess Solar, no Overnight
+            default:
+              - service: input_number.set_value
+                metadata: {}
+                data:
+                  value: 90
+                target:
+                  entity_id: input_number.evse_max_charge
+              - service: input_boolean.turn_off
+                target:
+                  entity_id:
+                    - input_boolean.charge_overnight
+                data: {}
+              - service: input_boolean.turn_on
+                metadata: {}
+                data: {}
+                target:
+                  entity_id: input_boolean.charge_with_excess_solar
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.evse_charging_options
+                data:
+                  option: Excess Solar, no Overnight
+mode: single
