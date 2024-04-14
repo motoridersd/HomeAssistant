@@ -1,0 +1,38 @@
+alias: Overseas Flight Coming In
+description: ""
+trigger:
+  - platform: event
+    event_type: flightradar24_entry
+condition:
+  - condition: template
+    value_template: >-
+      {{ trigger.event.data.airport_origin_code_iata in
+      ('LHR','NRT','MUC','CDG')}}
+action:
+  - service: chime_tts.say
+    metadata: {}
+    data:
+      chime_path: /media/AirportChime.mp3
+      end_chime_path: ""
+      offset: -700
+      final_delay: 0
+      tts_speed: 100
+      tts_pitch: 0
+      volume_level: 0.2
+      message: >-
+        {{ trigger.event.data.airline_short }} {{
+        trigger.event.data.flight_number[2:3] }} {{
+        trigger.event.data.flight_number[3:4] }} {{
+        trigger.event.data.flight_number[4:5] }} {{
+        trigger.event.data.flight_number[5:6] }}
+    target:
+      entity_id: media_player.office_cloud
+  - service: notify.jorge_s_phone
+    metadata: {}
+    data:
+      message: >-
+        {{trigger.event.data.airline_short }} {{
+        trigger.event.data.flight_number[2:6] }}
+        {{trigger.event.data.aircraft_code }}
+    enabled: true
+mode: single
