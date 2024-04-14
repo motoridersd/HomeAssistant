@@ -4,7 +4,7 @@ A collection of HomeAssistant Automations and other things I use
 
 ## Flight Notifications
 
-This automation listens for Flightradar24 integration events and then uses the Chime TTS add on to announce the flight Airline and Number (spelled out, ie 466 becomes Four Six Six). It also sends a notification to my phone and provides three parameters from the flightradar24 event.
+This automation listens for Flightradar24 <a href=https://github.com/AlexandrErohin/home-assistant-flightradar24>integration</a> events and then uses the Chime TTS add on to announce the flight Airline and Number (spelled out, ie 466 becomes Four Six Six). It also sends a notification to my phone and provides three parameters from the flightradar24 event.
 
 The Condition limits the flights to what I care about, in this case it's those flying from overseas into SAN, and they only come from MUC, LHR, CDG and NRT. This can be changed to use any condition available in the event. Replace 'airport_origin_code_iata' with any other value and then adjust the conditions accordingly.
 
