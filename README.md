@@ -2,7 +2,7 @@
 
 A collection of HomeAssistant Automations and other things I use
 
-Flight Notifications
+## Flight Notifications
 
 This automation listens for Flightradar24 integration events and then uses the Chime TTS add on to announce the flight Airline and Number (spelled out, ie 466 becomes Four Six Six). It also sends a notification to my phone and provides three parameters from the flightradar24 event.
 
